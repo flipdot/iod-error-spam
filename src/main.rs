@@ -53,10 +53,9 @@ fn main() {
                 .send(err_msg)
                 .expect("[tx] channel closed, this should never happen!"),
             Err(e) => info!(
-                "deserialization of message payload failed! \n\
-                 serde error: {:?}\n\
-                 payload:\n\
-                 {}",
+                "deserialization of message payload failed!\
+                 \n    serde error: {:?}\
+                 \n    payload: {}",
                 e,
                 String::from_utf8_lossy(&msg.payload)
             ),
