@@ -1,3 +1,4 @@
+extern crate clap;
 extern crate env_logger;
 #[macro_use]
 extern crate log;
@@ -9,7 +10,6 @@ extern crate serde_json;
 use std::sync::{mpsc, Mutex};
 use rumqtt::{MqttCallback, MqttClient, MqttOptions, QoS};
 
-const MQTT_HOST: &str = "localhost:1883";
 const ERR_TOPIC: &str = "errors";
 const IRC_TOPIC: &str = "actors/all/flipbot_send";
 
@@ -27,12 +27,40 @@ struct IrcMessage {
 fn main() {
     env_logger::init().expect("logger initialized twice (somehow)!");
 
-    // TODO: command line args
+    let matches = clap::App::new("iod-error-spam")
+        .version("0.1.0")
+        .author("Jonas Platte <jplatte+git@posteo.com>")
+        .about(
+            "Retrieves errors from a dedicated MQTT topic and alerts users accordingly \
+             (currently via IRC only)",
+        )
+        .arg(
+            clap::Arg::with_name("HOST")
+                .short("h")
+                .long("host")
+                .help("The host the MQTT broker runs on")
+                .default_value("localhost"),
+        )
+        .arg(
+            clap::Arg::with_name("PORT")
+                .short("p")
+                .long("port")
+                .help("The port used by the MQTT broker")
+                .default_value("1883"),
+        )
+        .get_matches();
 
     let client_options = MqttOptions::new()
         .set_keep_alive(5)
         .set_reconnect(3)
-        .set_broker(MQTT_HOST);
+        .set_broker(
+            // unwrap is safe here because the arguments have default values.
+            &format!(
+                "{}:{}",
+                matches.value_of("HOST").unwrap(),
+                matches.value_of("PORT").unwrap(),
+            ),
+        );
 
     let (tx, rx) = mpsc::channel::<ErrorMessage>();
     let tx = Mutex::new(tx);
