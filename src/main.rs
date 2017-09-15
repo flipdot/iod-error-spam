@@ -29,11 +29,7 @@ fn main() {
 
     let matches = clap::App::new("iod-error-spam")
         .version("0.1.0")
-        .author("Jonas Platte <jplatte+git@posteo.com>")
-        .about(
-            "Retrieves errors from a dedicated MQTT topic and alerts users accordingly \
-             (currently via IRC only)",
-        )
+        .about(env!("CARGO_PKG_DESCRIPTION"))
         .arg(
             clap::Arg::with_name("HOST")
                 .short("h")

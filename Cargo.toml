@@ -1,5 +1,9 @@
 [package]
 authors = ["Jonas Platte <jplatte+git@posteo.de>"]
+description = """\
+    Retrieves errors from a dedicated MQTT topic and alerts users accordingly \
+    (currently via IRC only)\
+    """
 name = "iod-error-spam"
 version = "0.1.0"
 
