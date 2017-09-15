@@ -1,11 +1,12 @@
 [package]
-authors = ["Jonas Platte <jplatte+git@posteo.de>"]
+name = "iod-error-spam"
 description = """\
     Retrieves errors from a dedicated MQTT topic and alerts users accordingly \
     (currently via IRC only)\
     """
-name = "iod-error-spam"
 version = "0.1.0"
+authors = ["Jonas Platte <jplatte+git@posteo.de>"]
+license = "AGPL-3.0"
 
 [dependencies]
 clap = "2.26.0"
