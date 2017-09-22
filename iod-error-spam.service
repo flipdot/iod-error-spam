@@ -1,0 +1,11 @@
+[Unit]
+Description=Internet of Dings error handling daemon
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=flipdot
+ExecStart=/home/flipdot/.cargo/bin/iod-error-spam
+
+[Install]
+WantedBy=multi-user.target
