@@ -26,4 +26,4 @@ will copy it to `~/.cargo/bin`.
 * Handle MQTT errors more gracefully
   * E.g. try reconnecting when the connection is lost
 * Last will: Send an error message somewhere.
-* (?) Different ways of altering users
+* (?) Different ways of alerting users
