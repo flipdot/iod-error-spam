@@ -2,12 +2,17 @@ extern crate clap;
 extern crate env_logger;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate maplit;
 extern crate rumqtt;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 
+use std::collections::HashMap;
 use std::sync::{mpsc, Mutex};
+use std::time::{Duration, Instant};
+
 use rumqtt::{MqttCallback, MqttClient, MqttOptions, QoS};
 
 const ERR_TOPIC: &str = "errors";
@@ -91,13 +96,32 @@ fn main() {
     let mut client = MqttClient::start(client_options, Some(mq_cbs)).expect("Coudn't start");
     client.subscribe(vec![(ERR_TOPIC, QoS::Level0)]).unwrap();
 
-    loop {
+    let rate_limits = hashmap!{
+        // max 5 messages per minute
+        Duration::from_secs(60) => 5,
+
+        // max 20 messages per hour
+        Duration::from_secs(60 * 60) => 20,
+    };
+
+    let mut sent_error_times = HashMap::new();
+
+    'main: loop {
         let err_msg = rx.recv()
             .expect("[rx] channel closed, this should never happen!");
 
         let irc_msg = IrcMessage {
             content: format!("Error in {}: {}", err_msg.origin, err_msg.message),
         };
+
+        let times = sent_error_times.entry(err_msg.origin).or_insert_with(|| Vec::new());
+        let now = Instant::now();
+
+        for (&duration, &limit) in &rate_limits {
+            if times.iter().filter(|&&t| now - t <= duration).count() >= limit {
+                continue 'main;
+            }
+        }
 
         client
             .publish(
@@ -106,5 +130,11 @@ fn main() {
                 serde_json::to_vec(&irc_msg).expect("serializing irc message payload failed!"),
             )
             .unwrap();
+
+        // Throw away error times that aren't relevant for any rate limit any more
+        times.retain(|&t| now - t <= *rate_limits.keys().max().unwrap());
+
+        // Add the time of the message we just published
+        times.push(now);
     }
 }
