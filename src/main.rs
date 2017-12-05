@@ -76,6 +76,12 @@ fn main() {
     let client_options = MqttOptions::new()
         .set_keep_alive(5)
         .set_reconnect(3)
+        .set_will(
+            IRC_TOPIC,
+            &serde_json::to_string(&IrcMessage {
+                content: "iod-error-spam died! :(".to_owned(),
+            }).unwrap(),
+        )
         .set_broker(
             // unwrap is safe here because the arguments have default values.
             &format!(
