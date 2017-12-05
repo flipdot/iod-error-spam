@@ -1,0 +1,6 @@
+{
+    "rate_limits": [
+        {"seconds": 60, "messages": 3},
+        {"seconds": 3600, "messages": 20}
+    ]
+}

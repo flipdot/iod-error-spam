@@ -10,6 +10,7 @@ extern crate serde_derive;
 extern crate serde_json;
 
 use std::collections::HashMap;
+use std::fs::File;
 use std::sync::{mpsc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -27,6 +28,17 @@ struct ErrorMessage {
 #[derive(Serialize, Deserialize)]
 struct IrcMessage {
     content: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Config {
+    rate_limits: Vec<RateLimit>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct RateLimit {
+    seconds: u64,
+    messages: usize,
 }
 
 fn main() {
@@ -49,7 +61,17 @@ fn main() {
                 .help("The port used by the MQTT broker")
                 .default_value("1883"),
         )
+        .arg(
+            clap::Arg::with_name("CONFIG")
+                .short("c")
+                .long("config")
+                .help("The config file path")
+                .default_value("config.json"),
+        )
         .get_matches();
+
+    let config: Config =
+        serde_json::from_reader(File::open(matches.value_of("CONFIG").unwrap()).unwrap()).unwrap();
 
     let client_options = MqttOptions::new()
         .set_keep_alive(5)
@@ -96,15 +118,16 @@ fn main() {
     let mut client = MqttClient::start(client_options, Some(mq_cbs)).expect("Coudn't start");
     client.subscribe(vec![(ERR_TOPIC, QoS::Level0)]).unwrap();
 
-    let rate_limits = hashmap!{
-        // max 5 messages per minute
-        Duration::from_secs(60) => 5,
-
-        // max 20 messages per hour
-        Duration::from_secs(60 * 60) => 20,
-    };
-
     let mut sent_error_times = HashMap::new();
+
+    let max_rate_limit_duration = Duration::from_secs(
+        config
+            .rate_limits
+            .iter()
+            .map(|&RateLimit { seconds, .. }| seconds)
+            .max()
+            .unwrap(),
+    );
 
     'main: loop {
         let err_msg = rx.recv()
@@ -114,11 +137,17 @@ fn main() {
             content: format!("Error in {}: {}", err_msg.origin, err_msg.message),
         };
 
-        let times = sent_error_times.entry(err_msg.origin).or_insert_with(|| Vec::new());
+        let times = sent_error_times
+            .entry(err_msg.origin)
+            .or_insert_with(|| Vec::new());
         let now = Instant::now();
 
-        for (&duration, &limit) in &rate_limits {
-            if times.iter().filter(|&&t| now - t <= duration).count() >= limit {
+        for &RateLimit { seconds, messages } in &config.rate_limits {
+            if times
+                .iter()
+                .filter(|&&t| now - t <= Duration::from_secs(seconds))
+                .count() >= messages
+            {
                 continue 'main;
             }
         }
@@ -132,7 +161,7 @@ fn main() {
             .unwrap();
 
         // Throw away error times that aren't relevant for any rate limit any more
-        times.retain(|&t| now - t <= *rate_limits.keys().max().unwrap());
+        times.retain(|&t| now - t <= max_rate_limit_duration);
 
         // Add the time of the message we just published
         times.push(now);
