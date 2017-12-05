@@ -2,8 +2,6 @@ extern crate clap;
 extern crate env_logger;
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate maplit;
 extern crate rumqtt;
 #[macro_use]
 extern crate serde_derive;
