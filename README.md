@@ -1,4 +1,4 @@
-# iod-error-spam
+# iod-error-spam [![Build Status](https://travis-ci.org/flipdot/iod-error-spam.svg?branch=master)](https://travis-ci.org/flipdot/iod-error-spam)
 
 Retrieves errors from a dedicated MQTT topic and alerts users accordingly
 (currently via IRC only).
