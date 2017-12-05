@@ -5,7 +5,10 @@ description = """\
     (currently via IRC only)\
     """
 version = "0.1.0"
-authors = ["Jonas Platte <jplatte+git@posteo.de>"]
+authors = [
+    "Jonas Platte <jplatte+git@posteo.de>",
+    "Kierán Meinhardt <kieran.meinhardt@gmail.com>",
+]
 license = "AGPL-3.0"
 
 [dependencies]
