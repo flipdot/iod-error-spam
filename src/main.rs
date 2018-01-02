@@ -143,7 +143,7 @@ fn main() {
 
         let times = sent_error_times
             .entry(err_msg.origin)
-            .or_insert_with(|| Vec::new());
+            .or_insert_with(Vec::new);
         let now = Instant::now();
 
         for &RateLimit { seconds, messages } in &config.rate_limits {
